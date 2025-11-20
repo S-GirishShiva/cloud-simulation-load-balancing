@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.cloudsimulation</groupId>
+    <artifactId>cloud-simulation-load-balancing</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Federated Cloud Simulation Platform</name>
+    <description>Multi-tenant federated cloud simulation with advanced load balancing</description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- CloudSim Plus 8.0.0 from Maven Central -->
+        <dependency>
+            <groupId>org.cloudsimplus</groupId>
+            <artifactId>cloudsim-plus</artifactId>
+            <version>8.0.0</version>
+        </dependency>
+
+        <!-- JUnit 5.9.0 for testing -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.9.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- SLF4J 2.0.9 for logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+
+        <!-- Logback 1.4.5 for logging implementation -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.4.5</version>
+        </dependency>
+
+        <!-- SnakeYAML 2.0 for YAML configuration parsing -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.0</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <!-- ===================================== -->
+        <!-- DEVELOPMENT PROFILE (Default)         -->
+        <!-- ===================================== -->
+        <!-- Purpose: Daily development, quick tests -->
+        <!-- Target: Developer workstations (8GB RAM) -->
+        <!-- Memory: 2GB max, suitable for 100+ VM simulations -->
+        <!-- GC: G1GC with default settings -->
+        <!-- Logging: Full (INFO level) -->
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <heap.min>512m</heap.min>
+                <heap.max>2g</heap.max>
+                <gc.type>G1GC</gc.type>
+                <gc.flags></gc.flags>
+                <logging.config>logback.xml</logging.config>
+                <test.timeout>120</test.timeout>
+                <test.groups>!scale</test.groups>
+            </properties>
+        </profile>
+
+        <!-- ===================================== -->
+        <!-- PERFORMANCE PROFILE                   -->
+        <!-- ===================================== -->
+        <!-- Purpose: Performance validation, regression testing -->
+        <!-- Target: Development servers (16GB RAM) -->
+        <!-- Memory: 4GB max, suitable for medium-scale tests -->
+        <!-- GC: G1GC with tuning for throughput -->
+        <!-- Logging: Minimal (WARN level) -->
+        <profile>
+            <id>perf</id>
+            <properties>
+                <heap.min>2g</heap.min>
+                <heap.max>4g</heap.max>
+                <gc.type>G1GC</gc.type>
+                <gc.flags>-XX:MaxGCPauseMillis=200 -XX:InitiatingHeapOccupancyPercent=45</gc.flags>
+                <logging.config>logback-perf.xml</logging.config>
+                <test.timeout>300</test.timeout>
+                <test.groups>scale,medium</test.groups>
+            </properties>
+        </profile>
+
+        <!-- ===================================== -->
+        <!-- SCALE TESTING PROFILE                 -->
+        <!-- ===================================== -->
+        <!-- Purpose: Large-scale stress testing -->
+        <!-- Target: Performance testing machines (32GB RAM) -->
+        <!-- Memory: 8GB max, required for 1000+ VM tests -->
+        <!-- GC: ZGC for low-latency, large heaps -->
+        <!-- Logging: Disabled (OFF level) -->
+        <profile>
+            <id>scale</id>
+            <properties>
+                <heap.min>4g</heap.min>
+                <heap.max>8g</heap.max>
+                <gc.type>ZGC</gc.type>
+                <gc.flags>-XX:ZCollectionInterval=30 -XX:ZAllocationSpikeTolerance=5</gc.flags>
+                <logging.config>logback-scale.xml</logging.config>
+                <test.timeout>600</test.timeout>
+                <test.groups>scale</test.groups>
+            </properties>
+        </profile>
+
+        <!-- ===================================== -->
+        <!-- PRODUCTION PROFILE                    -->
+        <!-- ===================================== -->
+        <!-- Purpose: Production simulation runs -->
+        <!-- Target: Production servers (16GB RAM) -->
+        <!-- Memory: 4GB fixed heap (no resize) -->
+        <!-- GC: G1GC with production tuning -->
+        <!-- Logging: ERROR only -->
+        <!-- Monitoring: JMX enabled, GC logging enabled -->
+        <profile>
+            <id>prod</id>
+            <properties>
+                <heap.min>4g</heap.min>
+                <heap.max>4g</heap.max>
+                <gc.type>G1GC</gc.type>
+                <gc.flags>-XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication</gc.flags>
+                <logging.config>logback-prod.xml</logging.config>
+                <test.timeout>300</test.timeout>
+                <test.groups>!scale</test.groups>
+                <jmx.flags>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false</jmx.flags>
+                <gc.logging>-Xlog:gc*:file=target/gc.log:time,uptime,level,tags</gc.logging>
+            </properties>
+        </profile>
+
+        <!-- ===================================== -->
+        <!-- CI/CD BENCHMARK PROFILE               -->
+        <!-- ===================================== -->
+        <!-- Purpose: Automated performance testing in CI/CD pipeline -->
+        <!-- Target: GitHub Actions runners (7GB RAM) -->
+        <!-- Memory: 2GB max, optimized for CI environment -->
+        <!-- GC: G1GC with balanced settings -->
+        <!-- Logging: Minimal (WARN level) -->
+        <!-- Test Groups: Benchmark tests only -->
+        <profile>
+            <id>benchmark-ci</id>
+            <properties>
+                <heap.min>1g</heap.min>
+                <heap.max>2g</heap.max>
+                <gc.type>G1GC</gc.type>
+                <gc.flags>-XX:MaxGCPauseMillis=200</gc.flags>
+                <logging.config>logback-perf.xml</logging.config>
+                <test.timeout>600</test.timeout>
+                <test.groups>benchmark</test.groups>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <plugins>
+            <!-- Maven Compiler Plugin for Java 17 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Surefire Plugin for Test Reporting -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <reportFormat>plain</reportFormat>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    <!-- Fix CloudSim Plus logging overhead timeout issue (Story 1.6 & 1.8) -->
+                    <!-- CloudSim Plus generates substantial console output during simulation -->
+                    <!-- ByteArrayOutputStream has high overhead when capturing large amounts of text -->
+                    <!-- Disabling stdout redirect allows output to flow directly to console -->
+                    <forkedProcessTimeoutInSeconds>${test.timeout}</forkedProcessTimeoutInSeconds>
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
+
+                    <!-- JVM heap configuration - profile-specific (Story 2.5) -->
+                    <!-- Profile properties control heap, GC type, and logging config -->
+                    <!-- Use -P flag to select profile: mvn test -Pperf -->
+                    <!-- Default profile (dev): 1GB heap, G1GC, standard logging -->
+                    <argLine>-Xms${heap.min} -Xmx${heap.max} -XX:+Use${gc.type} ${gc.flags} -Dlogback.configurationFile=${logging.config} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./target/</argLine>
+
+                    <!-- Test groups based on profile -->
+                    <groups>${test.groups}</groups>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Surefire Plugin for better test reporting -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <reportFormat>plain</reportFormat>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    <!-- Configure JVM arguments for tests -->
+                    <argLine>-Xmx2g -Xms512m</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

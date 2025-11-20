@@ -1,0 +1,42 @@
+# Steady Load Benchmark Scenario
+# Tests algorithm performance under constant baseline load
+#
+# Expected behavior:
+# - Constant arrival rate of 8 cloudlets/second throughout 300-second duration
+# - Predictable resource utilization settling around 50-60% CPU
+# - Infrastructure should handle steady state without overloading
+#
+# Validation checkpoints:
+# - 100s: System should be in stable state with consistent utilization (~50-60%)
+# - 200s: Utilization should remain steady, minimal migrations expected
+# - 300s: Final metrics should show consistent performance throughout run
+#
+# Expected metrics:
+# - Minimal VM migrations (algorithm should find stable placement)
+# - Low overload events (< 5% of time)
+# - Consistent average utilization (50-60%)
+# - Very low SLA violations (< 1%)
+
+scenarioId: "steady_load"
+duration: 300  # 5 minutes
+seed: 100
+tickInterval: 1.0
+
+infrastructureConfig:
+  federationCount: 1
+  datacentersPerFederation: 2
+  hostsPerDatacenter: 10
+  vmsPerHost: 5
+
+workloadConfig:
+  patternType: "steady"
+  seed: 100
+  duration: 300
+  intensity: 8.0          # 8 cloudlets/second constant rate
+  burstMultiplier: 1.0    # Not used for steady pattern
+  frequency: 1.0          # Not used for steady pattern
+  rampUpDuration: 0       # Not used for steady pattern
+
+policyConfig:
+  defaultPolicy: "threshold"
+  enableMetrics: true

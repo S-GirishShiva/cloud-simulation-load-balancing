@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Scale Testing Profile Logback Configuration
+  Purpose: Logging disabled for maximum performance
+  Target: OFF level - no logging overhead
+  Used by: mvn test -Pscale
+  Note: Logging overhead can reduce throughput by 50%+ at scale
+-->
+<configuration>
+    <!-- Console appender (won't be used due to OFF level) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger disabled for zero overhead -->
+    <root level="OFF">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <!-- CloudSim Plus logger - completely disabled -->
+    <logger name="org.cloudsimplus" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Application logger - completely disabled -->
+    <logger name="com.cloudsimulation" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+</configuration>

@@ -1,0 +1,36 @@
+# Traffic Spike Benchmark Scenario
+# Tests algorithm resilience to sudden load spikes
+#
+# Expected behavior:
+# - Pre-spike (0-140s): Steady 5 cloudlets/second baseline
+# - Spike window (140-160s): 50 cloudlets/second (10x burst)
+# - Post-spike (160-300s): Return to 5 cloudlets/second baseline
+#
+# Validation checkpoints:
+# - 100s: Baseline metrics should show stable CPU/memory utilization
+# - 150s: During spike, expect high migration activity and possible SLA violations
+# - 250s: Post-spike recovery should show system stabilization
+
+scenarioId: "traffic_spike"
+duration: 300  # 5 minutes
+seed: 42
+tickInterval: 1.0
+
+infrastructureConfig:
+  federationCount: 1
+  datacentersPerFederation: 2
+  hostsPerDatacenter: 10
+  vmsPerHost: 5
+
+workloadConfig:
+  patternType: "burst"
+  seed: 42
+  duration: 300
+  intensity: 5.0          # Base: 5 cloudlets/second
+  burstMultiplier: 10.0   # Spike: 50 cloudlets/second (10x)
+  frequency: 1.0          # Not used for burst pattern
+  rampUpDuration: 150     # Not used for burst pattern
+
+policyConfig:
+  defaultPolicy: "threshold"
+  enableMetrics: true

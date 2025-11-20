@@ -1,0 +1,9 @@
+scenarioId: "malformed_scenario"
+duration: 100
+seed: 123456789
+tickInterval 1.0
+infrastructureConfig:
+  federationCount: 1
+  datacentersPerFederation: [invalid syntax here
+  hostsPerDatacenter: 5
+  vmsPerHost: 2

@@ -1,0 +1,31 @@
+# Example Scenario Configuration
+# This file demonstrates the structure for defining simulation scenarios
+
+# Unique identifier for the scenario (alphanumeric, hyphens, and underscores only)
+scenarioId: "example_scenario"
+
+# Simulation duration in seconds (range: 1-100000)
+duration: 100
+
+# Random seed for reproducibility (any long value)
+seed: 123456789
+
+# Simulation tick interval in seconds (range: 0.1-10.0)
+tickInterval: 1.0
+
+# Infrastructure topology configuration
+infrastructureConfig:
+  # Number of federations (range: 1-10)
+  federationCount: 1
+
+  # Datacenters per federation (range: 1-20)
+  datacentersPerFederation: 2
+
+  # Hosts per datacenter (range: 1-100)
+  hostsPerDatacenter: 10
+
+  # VMs per host (range: 1-20)
+  # Total VMs must not exceed 1000
+  # Total VMs = federationCount × datacentersPerFederation × hostsPerDatacenter × vmsPerHost
+  # In this example: 1 × 2 × 10 × 5 = 100 VMs
+  vmsPerHost: 5

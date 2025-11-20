@@ -1,0 +1,9 @@
+scenarioId: "invalid_vm_count_scenario"
+duration: 100
+seed: 123456789
+tickInterval: 1.0
+infrastructureConfig:
+  federationCount: 5
+  datacentersPerFederation: 10
+  hostsPerDatacenter: 50
+  vmsPerHost: 10

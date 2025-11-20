@@ -1,0 +1,24 @@
+# Test 60 second scenario - based on working quick_test
+scenarioId: "test_60s"
+duration: 60  # 60 seconds instead of 30
+seed: 42
+tickInterval: 1.0
+
+infrastructureConfig:
+  federationCount: 1
+  datacentersPerFederation: 2
+  hostsPerDatacenter: 5
+  vmsPerHost: 2  # 20 VMs total
+
+workloadConfig:
+  patternType: "steady"
+  seed: 42
+  duration: 60
+  intensity: 4.0          # 4 cloudlets/second
+  burstMultiplier: 1.0
+  frequency: 1.0
+  rampUpDuration: 0
+
+policyConfig:
+  defaultPolicy: "threshold"
+  enableMetrics: true

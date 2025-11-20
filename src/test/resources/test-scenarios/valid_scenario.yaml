@@ -1,0 +1,9 @@
+scenarioId: "valid_test_scenario"
+duration: 50
+seed: 987654321
+tickInterval: 0.5
+infrastructureConfig:
+  federationCount: 1
+  datacentersPerFederation: 1
+  hostsPerDatacenter: 5
+  vmsPerHost: 2

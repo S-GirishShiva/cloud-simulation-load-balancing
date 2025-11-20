@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Performance-optimized logging configuration -->
+    <!-- CloudSim Plus logging completely disabled for maximum performance -->
+    <!-- Use this configuration for performance testing and benchmarks -->
+
+    <!-- Minimal console appender with reduced overhead -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} %-5level %logger{20} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Disable CloudSim Plus logging entirely -->
+    <logger name="org.cloudsimplus" level="OFF" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Minimal application logging (warnings only) -->
+    <logger name="com.cloudsimulation" level="WARN" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
+    <!-- Root logger at WARN level -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

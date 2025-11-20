@@ -1,0 +1,44 @@
+# Diurnal Pattern Benchmark Scenario
+# Tests algorithm adaptation to gradual load variations simulating daily usage cycles
+#
+# Expected behavior:
+# - Sine wave load pattern with low frequency (0.01) simulating day/night cycle
+# - Base intensity of 5.0 cloudlets/second, oscillating between low and peak
+# - Gradual increase from low load to peak, then decrease back to low
+# - Cycle period: ~314 seconds (one complete sine wave at frequency 0.01)
+#
+# Validation checkpoints:
+# - 75s: Low load period (~30% utilization), minimal activity expected
+# - 150s: Peak load period (~80% utilization), algorithms should handle gracefully
+# - 225s: Returning to low load (~30% utilization), migrations stabilizing
+# - 300s: Stable state, system should have adapted to pattern
+#
+# Expected metrics:
+# - Oscillating utilization between 30-80%
+# - Moderate VM migrations as load changes (algorithm adapting)
+# - Few overload events (algorithms should predict pattern)
+# - Low SLA violations (< 5% - algorithms may need time to adapt)
+
+scenarioId: "diurnal_pattern"
+duration: 300  # 5 minutes
+seed: 200
+tickInterval: 1.0
+
+infrastructureConfig:
+  federationCount: 1
+  datacentersPerFederation: 2
+  hostsPerDatacenter: 10
+  vmsPerHost: 5
+
+workloadConfig:
+  patternType: "diurnal"
+  seed: 200
+  duration: 300
+  intensity: 5.0          # Base: 5 cloudlets/second
+  burstMultiplier: 1.0    # Not used for diurnal pattern
+  frequency: 0.01         # Low frequency for gradual daily cycle simulation
+  rampUpDuration: 0       # Not used for diurnal pattern
+
+policyConfig:
+  defaultPolicy: "threshold"
+  enableMetrics: true

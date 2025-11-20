@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudSim Performance Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .dashboard {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .controls {
+            background: #ecf0f1;
+            padding: 20px 30px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-group label {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #2c3e50;
+            text-transform: uppercase;
+        }
+        .control-group input,
+        .control-group select,
+        .control-group button {
+            padding: 10px 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .control-group button {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .control-group button:hover {
+            background: #2980b9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+        .stat-card.success { border-left-color: #27ae60; }
+        .stat-card.warning { border-left-color: #f39c12; }
+        .stat-card.danger { border-left-color: #e74c3c; }
+        .stat-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-trend {
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+        .trend-up { color: #27ae60; }
+        .trend-down { color: #e74c3c; }
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+        }
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .chart-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        .chart-wrapper {
+            position: relative;
+            height: 400px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        .error {
+            background: #ffe6e6;
+            border-left: 4px solid #e74c3c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .regression-alerts {
+            margin: 30px 0;
+        }
+        .alert {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .alert.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>📊 CloudSim Performance Dashboard</h1>
+            <p>Real-time performance monitoring and trend analysis</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>CSV Data File</label>
+                <input type="file" id="csvFileInput" accept=".csv">
+            </div>
+            <div class="control-group">
+                <label>Benchmark Filter</label>
+                <select id="benchmarkFilter">
+                    <option value="all">All Benchmarks</option>
+                    <option value="startup">Startup</option>
+                    <option value="throughput">Throughput</option>
+                    <option value="memory">Memory</option>
+                    <option value="gc">GC</option>
+                    <option value="latency">Latency</option>
+                    <option value="scalability">Scalability</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Last N Runs</label>
+                <select id="runLimitFilter">
+                    <option value="10">Last 10</option>
+                    <option value="20">Last 20</option>
+                    <option value="30" selected>Last 30</option>
+                    <option value="50">Last 50</option>
+                    <option value="all">All Data</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button id="refreshBtn" onclick="applyFilters()">Apply Filters</button>
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button onclick="exportDashboard()">Export Dashboard</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="loadingMessage" class="loading">
+                📁 Please load a CSV file to view performance data
+            </div>
+            <div id="errorMessage" class="error" style="display:none;"></div>
+
+            <div id="dashboardContent" style="display:none;">
+                <div class="stats-grid" id="statsGrid"></div>
+                <div class="regression-alerts" id="regressionAlerts"></div>
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Performance Trends Over Time</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="trendsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Throughput Trends</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="throughputChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Memory Usage Trends</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="memoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>GC Overhead Trends</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="gcChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let filteredData = [];
+        let charts = {};
+
+        document.getElementById('csvFileInput').addEventListener('change', handleFileSelect);
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                Papa.parse(file, {
+                    header: true,
+                    complete: function(results) {
+                        allData = results.data.filter(row => row.timestamp && row.benchmark);
+                        document.getElementById('loadingMessage').style.display = 'none';
+                        document.getElementById('errorMessage').style.display = 'none';
+                        applyFilters();
+                    },
+                    error: function(error) {
+                        showError('Error parsing CSV: ' + error.message);
+                    }
+                });
+            }
+        }
+
+        function applyFilters() {
+            if (allData.length === 0) return;
+
+            const benchmarkFilter = document.getElementById('benchmarkFilter').value;
+            const runLimit = document.getElementById('runLimitFilter').value;
+
+            // Filter by benchmark
+            filteredData = benchmarkFilter === 'all'
+                ? [...allData]
+                : allData.filter(row => row.benchmark === benchmarkFilter);
+
+            // Get unique timestamps and limit runs
+            const uniqueTimestamps = [...new Set(filteredData.map(r => r.timestamp))].sort().reverse();
+            const limitedTimestamps = runLimit === 'all'
+                ? uniqueTimestamps
+                : uniqueTimestamps.slice(0, parseInt(runLimit));
+
+            filteredData = filteredData.filter(row => limitedTimestamps.includes(row.timestamp));
+
+            renderDashboard();
+        }
+
+        function renderDashboard() {
+            document.getElementById('dashboardContent').style.display = 'block';
+            renderStats();
+            renderRegressionAlerts();
+            renderCharts();
+        }
+
+        function renderStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            const benchmarks = [...new Set(filteredData.map(r => r.benchmark))];
+            const runs = [...new Set(filteredData.map(r => r.timestamp))];
+
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Total Runs</div>
+                    <div class="stat-value">${runs.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Benchmarks</div>
+                    <div class="stat-value">${benchmarks.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Metrics</div>
+                    <div class="stat-value">${filteredData.length}</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-label">Date Range</div>
+                    <div class="stat-value" style="font-size:1.2em;">
+                        ${runs.length > 0 ? new Date(runs[runs.length - 1]).toLocaleDateString() : 'N/A'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRegressionAlerts() {
+            const alertsDiv = document.getElementById('regressionAlerts');
+            const regressions = detectRegressions();
+
+            if (regressions.length === 0) {
+                alertsDiv.innerHTML = '<div class="alert success">✅ No performance regressions detected</div>';
+            } else {
+                alertsDiv.innerHTML = '<h3>⚠️ Performance Alerts</h3>' +
+                    regressions.map(r => `<div class="alert">${r}</div>`).join('');
+            }
+        }
+
+        function detectRegressions() {
+            // Simple regression detection: compare last run to average of previous runs
+            const regressions = [];
+            const metrics = groupByMetric(filteredData);
+
+            Object.keys(metrics).forEach(metricKey => {
+                const values = metrics[metricKey];
+                if (values.length < 2) return;
+
+                const latest = parseFloat(values[values.length - 1].value);
+                const previous = values.slice(0, -1).map(v => parseFloat(v.value));
+                const avg = previous.reduce((a, b) => a + b, 0) / previous.length;
+
+                const change = ((latest - avg) / avg) * 100;
+                const threshold = 10; // 10% threshold
+
+                if (Math.abs(change) > threshold) {
+                    const direction = change > 0 ? 'increased' : 'decreased';
+                    regressions.push(`${metricKey}: ${direction} by ${Math.abs(change).toFixed(1)}%`);
+                }
+            });
+
+            return regressions;
+        }
+
+        function renderCharts() {
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+
+            // Render trend chart
+            renderTrendsChart();
+            renderThroughputChart();
+            renderMemoryChart();
+            renderGCChart();
+        }
+
+        function renderTrendsChart() {
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            const timeMetrics = filteredData.filter(r =>
+                r.metric.includes('time_ms') || r.metric.includes('initialization')
+            );
+
+            const datasets = groupByMetric(timeMetrics);
+            const chartDatasets = Object.keys(datasets).slice(0, 5).map((metric, idx) => ({
+                label: metric,
+                data: datasets[metric].map(r => ({
+                    x: new Date(r.timestamp),
+                    y: parseFloat(r.value)
+                })),
+                borderColor: getColor(idx),
+                backgroundColor: getColor(idx, 0.1),
+                tension: 0.4
+            }));
+
+            charts.trends = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: chartDatasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'time', time: { unit: 'day' } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderThroughputChart() {
+            const ctx = document.getElementById('throughputChart').getContext('2d');
+            const throughputMetrics = filteredData.filter(r =>
+                r.metric.includes('per_second') || r.metric.includes('throughput')
+            );
+
+            const datasets = groupByMetric(throughputMetrics);
+            const chartDatasets = Object.keys(datasets).map((metric, idx) => ({
+                label: metric,
+                data: datasets[metric].map(r => ({
+                    x: new Date(r.timestamp),
+                    y: parseFloat(r.value)
+                })),
+                borderColor: getColor(idx),
+                backgroundColor: getColor(idx, 0.1),
+                tension: 0.4
+            }));
+
+            charts.throughput = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: chartDatasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'time', time: { unit: 'day' } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderMemoryChart() {
+            const ctx = document.getElementById('memoryChart').getContext('2d');
+            const memoryMetrics = filteredData.filter(r =>
+                r.metric.includes('memory_mb') || r.metric.includes('mb_per')
+            );
+
+            const datasets = groupByMetric(memoryMetrics);
+            const chartDatasets = Object.keys(datasets).slice(0, 5).map((metric, idx) => ({
+                label: metric,
+                data: datasets[metric].map(r => ({
+                    x: new Date(r.timestamp),
+                    y: parseFloat(r.value)
+                })),
+                borderColor: getColor(idx),
+                backgroundColor: getColor(idx, 0.1),
+                fill: true,
+                tension: 0.4
+            }));
+
+            charts.memory = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: chartDatasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'time', time: { unit: 'day' } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function renderGCChart() {
+            const ctx = document.getElementById('gcChart').getContext('2d');
+            const gcMetrics = filteredData.filter(r =>
+                r.metric.includes('gc') || r.metric.includes('pause')
+            );
+
+            const datasets = groupByMetric(gcMetrics);
+            const chartDatasets = Object.keys(datasets).slice(0, 5).map((metric, idx) => ({
+                label: metric,
+                data: datasets[metric].map(r => ({
+                    x: new Date(r.timestamp),
+                    y: parseFloat(r.value)
+                })),
+                borderColor: getColor(idx),
+                backgroundColor: getColor(idx, 0.1),
+                tension: 0.4
+            }));
+
+            charts.gc = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: chartDatasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { type: 'time', time: { unit: 'day' } },
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function groupByMetric(data) {
+            const grouped = {};
+            data.forEach(row => {
+                const key = `${row.benchmark}.${row.metric}`;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(row);
+            });
+            return grouped;
+        }
+
+        function getColor(index, alpha = 1) {
+            const colors = [
+                `rgba(52, 152, 219, ${alpha})`,
+                `rgba(46, 204, 113, ${alpha})`,
+                `rgba(155, 89, 182, ${alpha})`,
+                `rgba(52, 73, 94, ${alpha})`,
+                `rgba(241, 196, 15, ${alpha})`,
+                `rgba(230, 126, 34, ${alpha})`,
+                `rgba(231, 76, 60, ${alpha})`,
+            ];
+            return colors[index % colors.length];
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loadingMessage').style.display = 'none';
+        }
+
+        function exportDashboard() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

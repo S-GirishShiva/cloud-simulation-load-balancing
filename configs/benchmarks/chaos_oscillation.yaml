@@ -1,0 +1,46 @@
+# Chaos Oscillation Benchmark Scenario
+# Tests algorithm resilience to rapid, unpredictable load fluctuations
+#
+# Expected behavior:
+# - High-frequency oscillating pattern (0.05) creates rapid load swings
+# - Base intensity of 10.0 cloudlets/second with volatile fluctuations
+# - Stress test for algorithm stability under chaotic conditions
+# - Rapid changes challenge prediction and adaptation mechanisms
+#
+# Validation checkpoints:
+# - 60s: Early chaos - verify algorithm doesn't crash under volatility
+# - 120s: Mid-run - check if algorithm adapts or maintains reactive approach
+# - 180s: Continued stress - verify system stability under sustained chaos
+# - 240s: Late-run - check for degradation or consistent handling
+# - 300s: Final state - algorithm should survive without catastrophic failure
+#
+# Expected metrics:
+# - Highly volatile utilization (20-90% swings)
+# - High VM migration count (algorithm constantly rebalancing)
+# - Possible overload events (challenging to predict rapid changes)
+# - Moderate SLA violations (5-15% - acceptable under chaos conditions)
+# - Key metric: Algorithm stability (no crashes, bounded response times)
+
+scenarioId: "chaos_oscillation"
+duration: 300  # 5 minutes
+seed: 300
+tickInterval: 1.0
+
+infrastructureConfig:
+  federationCount: 1
+  datacentersPerFederation: 2
+  hostsPerDatacenter: 10
+  vmsPerHost: 5
+
+workloadConfig:
+  patternType: "oscillating"
+  seed: 300
+  duration: 300
+  intensity: 10.0         # High base: 10 cloudlets/second
+  burstMultiplier: 1.0    # Not used for oscillating pattern
+  frequency: 0.05         # High frequency for rapid chaotic fluctuations
+  rampUpDuration: 0       # Not used for oscillating pattern
+
+policyConfig:
+  defaultPolicy: "threshold"
+  enableMetrics: true

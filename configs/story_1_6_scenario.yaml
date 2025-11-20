@@ -1,0 +1,28 @@
+# Story 1.6 Test Scenario Configuration
+# Defines infrastructure topology and simulation parameters for Story 1.6
+
+# Unique scenario identifier
+scenarioId: "story_1_6_scenario"
+
+# Simulation duration in seconds
+duration: 100
+
+# Random seed for reproducibility
+seed: 987654321
+
+# Simulation tick interval in seconds
+tickInterval: 1.0
+
+# Infrastructure topology configuration
+infrastructureConfig:
+  # Number of federations (1 federation for this test)
+  federationCount: 1
+
+  # Number of datacenters per federation (2 datacenters)
+  datacentersPerFederation: 2
+
+  # Number of hosts per datacenter (10 hosts)
+  hostsPerDatacenter: 10
+
+  # Number of VMs per host (5 VMs = 100 VMs total)
+  vmsPerHost: 5

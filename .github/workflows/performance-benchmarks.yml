@@ -1,0 +1,126 @@
+name: Performance Benchmarks
+
+on:
+  # Run on schedule (nightly at 2 AM UTC)
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Run on pull requests that modify source code
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - '.github/workflows/performance-benchmarks.yml'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    name: Run Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for trend analysis
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Performance Benchmarks
+        run: mvn test -Pbenchmark-ci -B
+        continue-on-error: true
+        id: benchmark_run
+
+      - name: Check for Regressions
+        id: regression_check
+        run: |
+          if [ -f target/benchmarks/baseline-default.csv ]; then
+            echo "Baseline found, checking for regressions..."
+            # Check if any benchmark failed
+            if grep -q "FAILED" target/surefire-reports/*.txt 2>/dev/null; then
+              echo "regression_detected=true" >> $GITHUB_OUTPUT
+              echo "::error::Performance regression detected!"
+              exit 1
+            else
+              echo "regression_detected=false" >> $GITHUB_OUTPUT
+              echo "✅ No regressions detected"
+            fi
+          else
+            echo "No baseline found - first run establishes baseline"
+            echo "regression_detected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate HTML Report
+        if: always()
+        run: |
+          echo "HTML report generated at: target/benchmarks/reports/benchmark-report-*.html"
+          ls -lh target/benchmarks/reports/ || echo "No reports generated"
+
+      - name: Upload Benchmark Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.run_number }}
+          path: |
+            target/benchmarks/
+            target/surefire-reports/
+          retention-days: 30
+
+      - name: Upload HTML Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports-${{ github.run_number }}
+          path: target/benchmarks/reports/*.html
+          retention-days: 90
+
+      - name: Comment on PR with Results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const regressionDetected = '${{ steps.regression_check.outputs.regression_detected }}' === 'true';
+
+            let comment = '## 📊 Performance Benchmark Results\n\n';
+
+            if (regressionDetected) {
+              comment += '⚠️ **Performance regressions detected!** Please review the benchmark results.\n\n';
+            } else {
+              comment += '✅ No performance regressions detected.\n\n';
+            }
+
+            comment += `- **Workflow Run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})\n`;
+            comment += `- **Commit**: ${{ github.sha }}\n`;
+            comment += `- **Benchmark Reports**: Available in workflow artifacts\n`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Fail workflow on regression
+        if: steps.regression_check.outputs.regression_detected == 'true'
+        run: |
+          echo "::error::Performance benchmark suite detected regressions"
+          exit 1
+
+      - name: Update Performance Badge
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          mkdir -p .github/badges
+          if [ "${{ steps.regression_check.outputs.regression_detected }}" == "true" ]; then
+            echo "![Performance](https://img.shields.io/badge/performance-regression-red)" > .github/badges/performance.md
+          else
+            echo "![Performance](https://img.shields.io/badge/performance-passing-green)" > .github/badges/performance.md
+          fi

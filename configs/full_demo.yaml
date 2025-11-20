@@ -1,0 +1,27 @@
+# Full Demo Scenario - Multi-Federation Load Balancing Simulation
+# Demonstrates complete end-to-end functionality with realistic workload
+
+scenarioId: "full_demo"
+duration: 60  # 60 seconds - long enough to see metrics evolution
+seed: 12345
+tickInterval: 1.0
+
+infrastructureConfig:
+  federationCount: 3           # 3 federations for cross-federation testing
+  datacentersPerFederation: 2  # 2 datacenters per federation
+  hostsPerDatacenter: 4        # 4 hosts per datacenter
+  vmsPerHost: 3                # 3 VMs per host
+                               # Total: 72 VMs across 3 federations
+
+workloadConfig:
+  patternType: "steady"
+  seed: 12345
+  duration: 60
+  intensity: 8.0              # 8 cloudlets/second = 480 total cloudlets
+  burstMultiplier: 1.0
+  frequency: 1.0
+  rampUpDuration: 0
+
+policyConfig:
+  defaultPolicy: "threshold"
+  enableMetrics: true
