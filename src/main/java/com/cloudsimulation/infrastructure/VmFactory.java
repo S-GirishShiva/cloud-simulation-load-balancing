@@ -18,7 +18,11 @@ public class VmFactory {
     private static final Logger logger = LoggerFactory.getLogger(VmFactory.class);
 
     // Default VM configuration
-    private static final long DEFAULT_MIPS = 1000;
+    // VM MIPS increased to 3000 to enable higher host utilization for migration testing.
+    // With 3 VMs per host @ 3000 MIPS = 9,000 MIPS capacity, and 4 concurrent cloudlets,
+    // we can achieve 36,000 MIPS demand on 40,000 MIPS hosts (90% utilization),
+    // sufficient to trigger ThresholdBalancer migrations at 80% threshold.
+    private static final long DEFAULT_MIPS = 3000;
     private static final long DEFAULT_RAM = 2048; // 2 GB in MB
     private static final long DEFAULT_STORAGE = 10000; // 10 GB in MB
     private static final long DEFAULT_BW = 1000; // 1 Gbps in Mbps

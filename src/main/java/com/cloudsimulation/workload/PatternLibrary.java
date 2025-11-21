@@ -16,7 +16,8 @@ public class PatternLibrary {
 
     /**
      * Generates steady workload pattern with constant arrival rate.
-     * Formula: Arrival time t_i = i / intensity, constant 1000 MIPS length
+     * Formula: Arrival time t_i = i / intensity
+     * Uses heterogeneous cloudlet distribution: 70% Light (1-5K MI), 20% Medium (10-50K MI), 10% Heavy (100-200K MI)
      *
      * @param config Workload configuration
      * @return List of cloudlet descriptors
@@ -30,7 +31,21 @@ public class PatternLibrary {
 
         for (int i = 0; i < totalCloudlets; i++) {
             double arrivalTime = i * interArrivalTime;
-            long length = 1000;  // Constant 1000 MIPS
+
+            // Heterogeneous cloudlet distribution (70-20-10)
+            double typeSelector = random.nextDouble();
+            long length;
+            if (typeSelector < 0.70) {
+                // 70% Light cloudlets: 1,000-5,000 MI (1-2 sec on 3000 MIPS VM)
+                length = 1000 + random.nextInt(4000);
+            } else if (typeSelector < 0.90) {
+                // 20% Medium cloudlets: 10,000-50,000 MI (3-17 sec)
+                length = 10000 + random.nextInt(40000);
+            } else {
+                // 10% Heavy cloudlets: 100,000-200,000 MI (33-67 sec)
+                length = 100000 + random.nextInt(100000);
+            }
+
             long fileSize = 300 + random.nextInt(100);   // 300-400 MB
             long outputSize = 300 + random.nextInt(100); // 300-400 MB
 
@@ -43,6 +58,7 @@ public class PatternLibrary {
     /**
      * Generates burst pattern with sudden traffic spike at midpoint.
      * Formula: intensity * burstMultiplier during spike window [duration/2 - 10, duration/2 + 10]
+     * Uses heterogeneous cloudlet distribution: 70% Light (1-5K MI), 20% Medium (10-50K MI), 10% Heavy (100-200K MI)
      *
      * @param config Workload configuration (requires burstMultiplier)
      * @return List of cloudlet descriptors
@@ -68,7 +84,21 @@ public class PatternLibrary {
             int cloudletsThisSecond = (int) arrivalRate + (random.nextDouble() < (arrivalRate % 1) ? 1 : 0);
             for (int i = 0; i < cloudletsThisSecond; i++) {
                 double arrivalTime = currentTime + random.nextDouble();
-                long length = 1000 + random.nextInt(500);
+
+                // Heterogeneous cloudlet distribution (70-20-10)
+                double typeSelector = random.nextDouble();
+                long length;
+                if (typeSelector < 0.70) {
+                    // 70% Light cloudlets: 1,000-5,000 MI (1-2 sec on 3000 MIPS VM)
+                    length = 1000 + random.nextInt(4000);
+                } else if (typeSelector < 0.90) {
+                    // 20% Medium cloudlets: 10,000-50,000 MI (3-17 sec)
+                    length = 10000 + random.nextInt(40000);
+                } else {
+                    // 10% Heavy cloudlets: 100,000-200,000 MI (33-67 sec)
+                    length = 100000 + random.nextInt(100000);
+                }
+
                 long fileSize = 300 + random.nextInt(100);
                 long outputSize = 300 + random.nextInt(100);
 
@@ -84,6 +114,7 @@ public class PatternLibrary {
     /**
      * Generates gradual increase pattern with linear ramp-up.
      * Formula: intensity * (1 + t / rampUpDuration), reaches 2x intensity at rampUpDuration
+     * Uses heterogeneous cloudlet distribution: 70% Light (1-5K MI), 20% Medium (10-50K MI), 10% Heavy (100-200K MI)
      *
      * @param config Workload configuration (requires rampUpDuration)
      * @return List of cloudlet descriptors
@@ -102,7 +133,21 @@ public class PatternLibrary {
             int cloudletsThisSecond = (int) arrivalRate + (random.nextDouble() < (arrivalRate % 1) ? 1 : 0);
             for (int i = 0; i < cloudletsThisSecond; i++) {
                 double arrivalTime = currentTime + random.nextDouble();
-                long length = 1000 + random.nextInt(500);
+
+                // Heterogeneous cloudlet distribution (70-20-10)
+                double typeSelector = random.nextDouble();
+                long length;
+                if (typeSelector < 0.70) {
+                    // 70% Light cloudlets: 1,000-5,000 MI (1-2 sec on 3000 MIPS VM)
+                    length = 1000 + random.nextInt(4000);
+                } else if (typeSelector < 0.90) {
+                    // 20% Medium cloudlets: 10,000-50,000 MI (3-17 sec)
+                    length = 10000 + random.nextInt(40000);
+                } else {
+                    // 10% Heavy cloudlets: 100,000-200,000 MI (33-67 sec)
+                    length = 100000 + random.nextInt(100000);
+                }
+
                 long fileSize = 300 + random.nextInt(100);
                 long outputSize = 300 + random.nextInt(100);
 
@@ -119,6 +164,7 @@ public class PatternLibrary {
      * Generates oscillating pattern with sine wave variation.
      * Formula: intensity * (1 + 0.5 * sin(2π * frequency * t / duration))
      * Varies between 0.5x and 1.5x intensity
+     * Uses heterogeneous cloudlet distribution: 70% Light (1-5K MI), 20% Medium (10-50K MI), 10% Heavy (100-200K MI)
      *
      * @param config Workload configuration (requires frequency)
      * @return List of cloudlet descriptors
@@ -137,7 +183,21 @@ public class PatternLibrary {
             int cloudletsThisSecond = (int) arrivalRate + (random.nextDouble() < (arrivalRate % 1) ? 1 : 0);
             for (int i = 0; i < cloudletsThisSecond; i++) {
                 double arrivalTime = currentTime + random.nextDouble();
-                long length = 1000 + random.nextInt(500);
+
+                // Heterogeneous cloudlet distribution (70-20-10)
+                double typeSelector = random.nextDouble();
+                long length;
+                if (typeSelector < 0.70) {
+                    // 70% Light cloudlets: 1,000-5,000 MI (1-2 sec on 3000 MIPS VM)
+                    length = 1000 + random.nextInt(4000);
+                } else if (typeSelector < 0.90) {
+                    // 20% Medium cloudlets: 10,000-50,000 MI (3-17 sec)
+                    length = 10000 + random.nextInt(40000);
+                } else {
+                    // 10% Heavy cloudlets: 100,000-200,000 MI (33-67 sec)
+                    length = 100000 + random.nextInt(100000);
+                }
+
                 long fileSize = 300 + random.nextInt(100);
                 long outputSize = 300 + random.nextInt(100);
 
@@ -154,6 +214,7 @@ public class PatternLibrary {
      * Generates diurnal pattern simulating 24-hour business cycle.
      * Formula: intensity * max(0.2, 1 + 0.8 * sin(2π * (t - 6) / 24))
      * Simulates business hours peak (9am-5pm high load), night hours low load (10pm-6am)
+     * Uses heterogeneous cloudlet distribution: 70% Light (1-5K MI), 20% Medium (10-50K MI), 10% Heavy (100-200K MI)
      *
      * @param config Workload configuration
      * @return List of cloudlet descriptors
@@ -173,7 +234,21 @@ public class PatternLibrary {
             int cloudletsThisSecond = (int) arrivalRate + (random.nextDouble() < (arrivalRate % 1) ? 1 : 0);
             for (int i = 0; i < cloudletsThisSecond; i++) {
                 double arrivalTime = currentTime + random.nextDouble();
-                long length = 1000 + random.nextInt(500);
+
+                // Heterogeneous cloudlet distribution (70-20-10)
+                double typeSelector = random.nextDouble();
+                long length;
+                if (typeSelector < 0.70) {
+                    // 70% Light cloudlets: 1,000-5,000 MI (1-2 sec on 3000 MIPS VM)
+                    length = 1000 + random.nextInt(4000);
+                } else if (typeSelector < 0.90) {
+                    // 20% Medium cloudlets: 10,000-50,000 MI (3-17 sec)
+                    length = 10000 + random.nextInt(40000);
+                } else {
+                    // 10% Heavy cloudlets: 100,000-200,000 MI (33-67 sec)
+                    length = 100000 + random.nextInt(100000);
+                }
+
                 long fileSize = 300 + random.nextInt(100);
                 long outputSize = 300 + random.nextInt(100);
 

@@ -23,8 +23,8 @@ public class CloudletFactory {
      */
     public static Cloudlet createCloudlet(int id, long length, long fileSize, long outputSize) {
         // Create cloudlet with: id, length (MIPS), pesNumber (1 PE)
-        // Use longer length to ensure simulation runs for desired duration
-        Cloudlet cloudlet = new CloudletSimple(id, length * 2, 1); // Multiply by 2 to extend execution time
+        // Removed ×2 multiplier for alignment with documented MI ranges
+        Cloudlet cloudlet = new CloudletSimple(id, length, 1);
 
         // Configure file sizes
         cloudlet.setFileSize(fileSize);      // Input data size (MB)

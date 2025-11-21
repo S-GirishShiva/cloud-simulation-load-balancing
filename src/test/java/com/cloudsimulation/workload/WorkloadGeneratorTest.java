@@ -138,4 +138,45 @@ public class WorkloadGeneratorTest {
             generator.generateCloudlets(invalidConfig);
         }, "Invalid config should trigger validation exception");
     }
+
+    @Test
+    public void testHeterogeneousCloudletDistribution() {
+        // Generate 1000 cloudlets for statistical significance
+        WorkloadConfig config = new WorkloadConfig("steady", 42L, 100, 10.0);
+        List<Cloudlet> cloudlets = generator.generateCloudlets(config);
+
+        // Classify cloudlets by length into light/medium/heavy buckets
+        // Note: CloudletFactory multiplier removed, so cloudlet length matches descriptor length
+        int lightCount = 0, mediumCount = 0, heavyCount = 0;
+        for (Cloudlet c : cloudlets) {
+            long length = c.getLength();
+            if (length >= 1000 && length < 5001) {
+                lightCount++;
+            } else if (length >= 10000 && length < 50001) {
+                mediumCount++;
+            } else if (length >= 100000 && length <= 200000) {
+                heavyCount++;
+            }
+        }
+
+        // Validate 70-20-10 distribution with ±5% tolerance
+        double lightPct = (lightCount * 100.0) / cloudlets.size();
+        double mediumPct = (mediumCount * 100.0) / cloudlets.size();
+        double heavyPct = (heavyCount * 100.0) / cloudlets.size();
+
+        assertTrue(lightPct >= 65 && lightPct <= 75,
+            String.format("Light cloudlets should be ~70%% (got %.1f%%)", lightPct));
+        assertTrue(mediumPct >= 15 && mediumPct <= 25,
+            String.format("Medium cloudlets should be ~20%% (got %.1f%%)", mediumPct));
+        assertTrue(heavyPct >= 5 && heavyPct <= 15,
+            String.format("Heavy cloudlets should be ~10%% (got %.1f%%)", heavyPct));
+
+        // Test reproducibility with same seed
+        List<Cloudlet> cloudlets2 = generator.generateCloudlets(config);
+        WorkloadValidator validator = new WorkloadValidator();
+        int hash1 = validator.computeWorkloadHash(cloudlets);
+        int hash2 = validator.computeWorkloadHash(cloudlets2);
+
+        assertEquals(hash1, hash2, "Same seed should produce identical distribution");
+    }
 }

@@ -180,4 +180,87 @@ public class PatternLibraryTest {
         int expected = (int) (steadyConfig.getIntensity() * steadyConfig.getDuration());
         assertEquals(expected, descriptors.size(), "Cloudlet count should match intensity * duration");
     }
+
+    @Test
+    public void testSteadyPatternHeterogeneousDistribution() {
+        // Generate 1000 cloudlets for statistical significance
+        WorkloadConfig config = new WorkloadConfig("steady", 42L, 100, 10.0);
+        RandomSeed.setSeed(config.getSeed());
+        List<CloudletDescriptor> descriptors = PatternLibrary.generateSteadyPattern(config);
+
+        // Classify cloudlets into light/medium/heavy buckets
+        int lightCount = 0, mediumCount = 0, heavyCount = 0;
+        for (CloudletDescriptor d : descriptors) {
+            long length = d.getLength();
+            if (length >= 1000 && length < 5001) {
+                lightCount++;
+            } else if (length >= 10000 && length < 50001) {
+                mediumCount++;
+            } else if (length >= 100000 && length <= 200000) {
+                heavyCount++;
+            }
+        }
+
+        // Validate 70-20-10 distribution with ±5% tolerance
+        double lightPct = (lightCount * 100.0) / descriptors.size();
+        double mediumPct = (mediumCount * 100.0) / descriptors.size();
+        double heavyPct = (heavyCount * 100.0) / descriptors.size();
+
+        assertTrue(lightPct >= 65 && lightPct <= 75,
+            String.format("Light cloudlets should be ~70%% (got %.1f%%)", lightPct));
+        assertTrue(mediumPct >= 15 && mediumPct <= 25,
+            String.format("Medium cloudlets should be ~20%% (got %.1f%%)", mediumPct));
+        assertTrue(heavyPct >= 5 && heavyPct <= 15,
+            String.format("Heavy cloudlets should be ~10%% (got %.1f%%)", heavyPct));
+    }
+
+    @Test
+    public void testAllPatternsUseHeterogeneousDistribution() {
+        // Test that all pattern types generate heterogeneous cloudlets
+        WorkloadConfig testConfig = new WorkloadConfig("test", 42L, 100, 10.0);
+        testConfig.setBurstMultiplier(5.0);
+        testConfig.setRampUpDuration(50);
+        testConfig.setFrequency(2.0);
+
+        // Test each pattern type
+        String[] patterns = {"steady", "burst", "gradual_increase", "oscillating", "diurnal"};
+
+        for (String patternType : patterns) {
+            RandomSeed.setSeed(42L);
+            List<CloudletDescriptor> descriptors;
+
+            switch (patternType) {
+                case "steady":
+                    descriptors = PatternLibrary.generateSteadyPattern(testConfig);
+                    break;
+                case "burst":
+                    descriptors = PatternLibrary.generateBurstPattern(testConfig);
+                    break;
+                case "gradual_increase":
+                    descriptors = PatternLibrary.generateGradualIncreasePattern(testConfig);
+                    break;
+                case "oscillating":
+                    descriptors = PatternLibrary.generateOscillatingPattern(testConfig);
+                    break;
+                case "diurnal":
+                    descriptors = PatternLibrary.generateDiurnalPattern(testConfig);
+                    break;
+                default:
+                    continue;
+            }
+
+            // Verify heterogeneous distribution exists
+            boolean hasLight = false, hasMedium = false, hasHeavy = false;
+            for (CloudletDescriptor d : descriptors) {
+                long length = d.getLength();
+                if (length >= 1000 && length < 5001) hasLight = true;
+                if (length >= 10000 && length < 50001) hasMedium = true;
+                if (length >= 100000 && length <= 200000) hasHeavy = true;
+            }
+
+            assertTrue(hasLight, String.format("%s pattern should have light cloudlets", patternType));
+            assertTrue(hasMedium, String.format("%s pattern should have medium cloudlets", patternType));
+            assertTrue(hasHeavy, String.format("%s pattern should have heavy cloudlets", patternType));
+        }
+    }
 }

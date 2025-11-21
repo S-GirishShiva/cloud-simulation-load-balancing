@@ -50,8 +50,9 @@ public class WorkloadGenerator {
                 desc.getFileSize(),
                 desc.getOutputSize()
             );
-            // Note: CloudSim Plus doesn't directly support arrival time on Cloudlet
-            // This would be handled by submission scheduler in SimulationRunner
+            // Set submission delay to implement arrival time scheduling
+            // CloudSim Plus delays cloudlet submission by the specified time
+            cloudlet.setSubmissionDelay(desc.getArrivalTime());
             cloudlets.add(cloudlet);
         }
 
