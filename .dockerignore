@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+*.iml
+.bmad-core
+
+# Build artifacts
+target/
+*.jar
+*.war
+*.class
+
+# Test results
+*.log
+test-output/
+
+# Results (will be mounted as volume)
+results/
+
+# Dashboard (built separately)
+src/main/resources/dashboard/node_modules
+src/main/resources/dashboard/dist
+src/main/resources/dashboard/.vite
+src/main/resources/dashboard/pnpm-lock.yaml
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Scripts
+*.sh
+*.bat
+
+# Temp files
+*.tmp
+*.bak
+*~
+.DS_Store
+Thumbs.db
+
+# Maven wrapper (optional)
+.mvn/wrapper/maven-wrapper.jar

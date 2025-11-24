@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Main simulation service
+  simulation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloud-simulation:latest
+    container_name: cloud-simulation
+    volumes:
+      # Mount configs for easy editing
+      - ./configs:/app/configs:ro
+      # Mount results directory to persist outputs
+      - ./results:/app/results
+    environment:
+      - JAVA_OPTS=-Xms1g -Xmx2g -XX:+UseG1GC
+    command: configs/benchmarks/traffic_spike.yaml
+
+  # Dashboard service (optional)
+  dashboard:
+    build:
+      context: ./src/main/resources/dashboard
+      dockerfile: Dockerfile.dashboard
+    image: cloud-simulation-dashboard:latest
+    container_name: cloud-simulation-dashboard
+    ports:
+      - "5173:5173"
+    volumes:
+      # Mount data directory for simulation results
+      - ./src/main/resources/dashboard/server/data:/app/server/data
+      # Mount source for development
+      - ./src/main/resources/dashboard/src:/app/src
+    environment:
+      - NODE_ENV=development
+    command: pnpm dev
+    depends_on:
+      - simulation
+
+  # Benchmark runner (run all scenarios)
+  benchmark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloud-simulation:latest
+    container_name: cloud-simulation-benchmark
+    profiles:
+      - benchmark
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./results:/app/results
+    environment:
+      - JAVA_OPTS=-Xms2g -Xmx4g -XX:+UseG1GC
+    entrypoint: ["java"]
+    command:
+      - "-jar"
+      - "app.jar"
+      - "--benchmark-mode"
